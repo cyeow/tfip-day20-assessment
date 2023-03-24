@@ -29,9 +29,10 @@ public class FrontController {
 
 	// TODO: Task 2, Task 3, Task 4, Task 6
 
-	@GetMapping("/")
+	@GetMapping(path={"/", "/login"})
 	public String goToLandingPage(Model model, HttpSession session) {
-		// check if already logged in (redirects to top secret)
+		// check if already logged in 
+		// tells the user it is already logged in, give option to logout
 		String loggedInUser = (String) session.getAttribute(LOGGED_IN_KEY);
 		if(loggedInUser != null) {
 			model.addAttribute("loggedInUser", loggedInUser);
@@ -41,7 +42,7 @@ public class FrontController {
 		// if page is refreshed, captcha should still remain if already generated
 		Captcha captcha = (Captcha) session.getAttribute(CAPTCHA_KEY);
 		if(captcha != null) {
-			model.addAttribute("captcha", captcha);
+			model.addAttribute(CAPTCHA_KEY, captcha);
 		}
 
 		model.addAttribute("login", new Login());
@@ -54,13 +55,14 @@ public class FrontController {
 		// first check if login is syntatically valid as this does not constitute a
 		// login attempt
 		if (binding.hasErrors()) {
-			// retain captcha in the model 
+			// retain captcha in the model but reset it
 			Captcha captcha = (Captcha) session.getAttribute(CAPTCHA_KEY);
 			if(captcha != null) {
 				captcha = Captcha.generateCaptcha();
 				model.addAttribute(CAPTCHA_KEY, captcha);
 				session.setAttribute(CAPTCHA_KEY, captcha);
 			}
+
 			return "view0";
 		}
 
@@ -78,13 +80,8 @@ public class FrontController {
 				// captcha answer is incorrect
 				
 				// update login attempts and redirect if failed
-				if (getAndSetLoginAttempts(session, login.getUsername()) > 3) {
-					authSvc.disableUser(login.getUsername());
-					resetLoginAttempts(session, login.getUsername());
-
-					session.removeAttribute(CAPTCHA_KEY);
-
-					model.addAttribute("username", login.getUsername());
+				if (loginAttemptsExceeded(session, login)) {
+					disableUserAndResetSession(model, session, login);
 					return "view2";
 				}
 	
@@ -107,11 +104,8 @@ public class FrontController {
 		} catch (Exception e) {
 
 			// update login attempts and redirect if failed
-			if (getAndSetLoginAttempts(session, login.getUsername()) > 3) {
-				authSvc.disableUser(login.getUsername());
-				resetLoginAttempts(session, login.getUsername());
-				session.removeAttribute("captcha");
-				model.addAttribute("username", login.getUsername());
+			if (loginAttemptsExceeded(session, login)) {
+				disableUserAndResetSession(model, session, login);
 				return "view2";
 			}
 
@@ -120,8 +114,8 @@ public class FrontController {
 
 			// trigger captcha
 			captcha = Captcha.generateCaptcha();
-			session.setAttribute(CAPTCHA_KEY, captcha);
 			model.addAttribute(CAPTCHA_KEY, captcha);
+			session.setAttribute(CAPTCHA_KEY, captcha);
 
 			return "view0";
 		}
@@ -131,9 +125,15 @@ public class FrontController {
 
 		// reset login attempts & captcha
 		session.removeAttribute(CAPTCHA_KEY);
-		resetLoginAttempts(session, login.getUsername());
+		resetLoginAttemptsAndCaptcha(session, login.getUsername());
 
 		return "redirect:/protected/view1.html";
+	}
+
+	private void disableUserAndResetSession(Model model, HttpSession session, Login login) {
+		authSvc.disableUser(login.getUsername());
+		resetLoginAttemptsAndCaptcha(session, login.getUsername());
+		model.addAttribute("username", login.getUsername());
 	}
 
 	@GetMapping("/logout")
@@ -149,19 +149,24 @@ public class FrontController {
 	}
 
 	private boolean isValidCaptcha(Double captchaAnswer, Captcha captcha) {	
+		// if no value received it is invalid
+		if(captchaAnswer == null) {
+			return false;
+		}
 		// checks by rounding to 2dp -- to account for divide operations	
 		return round(captchaAnswer).compareTo(round(captcha.getResult())) == 0 ? true : false;
 	}
 
-	// rounds to 2dp
-	private Double round(Double number) {
+	private Double round(Double number) {		
+		// rounds to 2dp
 		DecimalFormat df = new DecimalFormat("0.00");
 		return Double.parseDouble(df.format(number));
 	}
 
-	private void resetLoginAttempts(HttpSession session, String username) {
+	private void resetLoginAttemptsAndCaptcha(HttpSession session, String username) {
 		String loginAttribute = LOGIN_ATTEMPT_KEY + username;
 		session.removeAttribute(loginAttribute);
+		session.removeAttribute(CAPTCHA_KEY);
 	}
 
 	private Integer getAndSetLoginAttempts(HttpSession session, String username) {
@@ -177,5 +182,9 @@ public class FrontController {
 		}
 
 		return (Integer) session.getAttribute(loginAttribute);
+	}
+
+	private boolean loginAttemptsExceeded(HttpSession session, Login login) {
+		return getAndSetLoginAttempts(session, login.getUsername()) > 3;
 	}
 }

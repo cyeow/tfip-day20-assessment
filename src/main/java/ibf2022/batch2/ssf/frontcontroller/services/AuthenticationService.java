@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import ibf2022.batch2.ssf.frontcontroller.model.Captcha;
 import ibf2022.batch2.ssf.frontcontroller.model.Login;
 import ibf2022.batch2.ssf.frontcontroller.respositories.AuthenticationRepository;
 import jakarta.json.Json;
@@ -52,9 +51,7 @@ public class AuthenticationService {
 			if (e.getMessage().startsWith(HttpStatus.BAD_REQUEST.value() + "") 
 			|| e.getMessage().startsWith(HttpStatus.UNAUTHORIZED.value() + "")) {
 				// if invalid
-				System.out.println("prog reaches here");
 				String errJson = e.getMessage().substring(e.getMessage().indexOf(":")+3, e.getMessage().length()-1);
-				System.out.println(errJson);
 				throw new Exception(getErrorMsg(errJson));
 			}
 
@@ -95,10 +92,5 @@ public class AuthenticationService {
 
 	private String getErrorMsg(String json) {
 		return Json.createReader(new StringReader(json)).readObject().getString("message");
-	}
-
-	public boolean checkCaptcha(Captcha catpcha, Double answer) {
-
-		return true;
 	}
 }

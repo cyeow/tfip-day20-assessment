@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/protected")
 public class ProtectedController {
 
+	private static final String LOGGED_IN_KEY = "logged_in_user";
+
 	// TODO Task 5
 	// Write a controller to protect resources rooted under /protected
 
@@ -33,7 +35,7 @@ public class ProtectedController {
 	}
 
 	private boolean isUserLoggedIn(HttpSession session) {
-		if (session.getAttribute("logged_in_user") != null) {
+		if (session.getAttribute(LOGGED_IN_KEY) != null) {
 			return true;
 		}
 		return false;
