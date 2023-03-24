@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -30,43 +31,50 @@ public class AuthenticationService {
 	// DO NOT CHANGE THE METHOD'S SIGNATURE
 	// Write the authentication method in here
 	public void authenticate(String username, String password) throws Exception {
-		
+
 		// send login attempt to endpoint
 		String fullAuthPath = UriComponentsBuilder.fromUriString(authUrl)
 				.path("/api/authenticate")
 				.toUriString();
 
-		System.out.println(fullAuthPath);
 		RequestEntity<String> req = RequestEntity.post(fullAuthPath)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON)
 				.body(new Login(username, password).toJSONString());
 
-		RestTemplate template = new RestTemplate();
+		RestTemplate template = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
 
-		ResponseEntity<String> resp = template.exchange(req, String.class);
+		ResponseEntity<String> resp = null;// = template.exchange(req, String.class);
 
-		// try {
-		// 	resp = template.exchange(fullAuthPath, HttpMethod.POST, req, String.class);
-		// } catch (Exception e) {
-		// 	System.out.println("exception thrown on exchange");
-		// 	e.printStackTrace();
-		// }
+		try {
+			resp = template.exchange(req, String.class);
+		} catch (Exception e) {
+			if (e.getMessage().startsWith(HttpStatus.BAD_REQUEST.value() + "") 
+			|| e.getMessage().startsWith(HttpStatus.UNAUTHORIZED.value() + "")) {
+				// if invalid
+				System.out.println("prog reaches here");
+				String errJson = e.getMessage().substring(e.getMessage().indexOf(":")+3, e.getMessage().length()-1);
+				System.out.println(errJson);
+				throw new Exception(getErrorMsg(errJson));
+			}
+
+			// code should not reach this point assuming the above 3 status codes are the
+			// only ones being sent from the endpoint
+			throw new Exception("Unhandled status code" + resp.getStatusCode().toString() + " with message: "
+					+ getErrorMsg(resp.getBody()));
+		}
 
 		// check response
-		if(resp.getStatusCode().isSameCodeAs(HttpStatus.CREATED)) {
+		if (resp.getStatusCode().isSameCodeAs(HttpStatus.CREATED)) {
 			// exit method if login is valid
-			return;
+			if (resp.getBody().toString().contains(username)) {
+				return;
+			}
+			// code should not reach this point
+			// returned authentication is not for the same user
+			// will only happen if the endpoint returns unexpected information
+			throw new Exception("User authentication server returned an invalid response.");
 		}
-
-		if(resp.getStatusCode().isSameCodeAs(HttpStatus.BAD_REQUEST) || resp.getStatusCode().isSameCodeAs(HttpStatus.UNAUTHORIZED)) {
-			// if invalid
-			System.out.println("prog reaches here");
-			throw new Exception(resp.getBody());
-		}
-
-		// code should not reach this point assuming the above 3 status codes are the only ones being sent from the endpoint
-		throw new Exception("Unhandled status code" + resp.getStatusCode().toString() + " with message: " + getErrorMsg(resp.getBody()));
 	}
 
 	// TODO: Task 3
@@ -85,13 +93,12 @@ public class AuthenticationService {
 		return authRepo.canFindUser(username);
 	}
 
-	
 	private String getErrorMsg(String json) {
 		return Json.createReader(new StringReader(json)).readObject().getString("message");
 	}
 
 	public boolean checkCaptcha(Captcha catpcha, Double answer) {
-		
+
 		return true;
 	}
 }

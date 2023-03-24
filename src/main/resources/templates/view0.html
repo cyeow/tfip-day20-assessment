@@ -17,63 +17,74 @@
 
 <body>
 
-	<h2>Please Login</h2>
+	<div data-th-if="${loggedInUser == null}">
+		<h2>Please Login</h2>
 
-	<form method="post" data-th-action="@{/login}" data-th-object="${login}">
-		<table>
-			<tr>
-				<td>
-					<label for="username">Username:</label>
-				</td>
-				<td>
-					<input type="text" id="username" size="30" placeholder="Please type in your username"
-						data-th-field="*{username}" data-th-value="*{username}">
-					<span data-th-if="${#fields.hasErrors('username')}" data-th-errors="*{username}"
-						data-th-errorclass="error"></span>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<label for="password">Password:</label>
-				</td>
-				<td>
-					<input type="password" id="password" size="30" placeholder="Please type in your password"
-						data-th-field="*{password}">
-					<span data-th-if="${#fields.hasErrors('password')}" data-th-errors="*{password}"
-						data-th-errorclass="error"></span>
-				</td>
-			</tr>
-			<tr data-th-if="${captcha != null}">
-				<td colspan="2">
-					What is <span data-th-text="${captcha.toString()}"></span>?
-				</td>
-			</tr>
-			<tr data-th-if="${captcha != null}">
-				<td>
-					<label for="answer">Answer:</label>
-				</td>
-				<td>
-					<input type="text" id="answer" placeholder="Answer" data-th-field="*{captchaAnswer}" />
-					<span data-th-if="${#fields.hasErrors('captchaAnswer')}" data-th-errors="*{captchaAnswer}"
-						data-th-errorclass="error"></span>
-				</td>
-			</tr>
-			<tr>
-				<td></td>
-				<td>
-					<button type="submit">Login</button>
-				</td>
-			</tr>
-		</table>
+		<form method="post" data-th-action="@{/login}" data-th-object="${login}">
+			<table>
+				<tr>
+					<td>
+						<label for="username">Username:</label>
+					</td>
+					<td>
+						<input type="text" id="username" size="30" placeholder="Please type in your username"
+							data-th-field="*{username}" data-th-value="*{username}">
+						<span data-th-if="${#fields.hasErrors('username')}" data-th-errors="*{username}"
+							data-th-errorclass="error"></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="password">Password:</label>
+					</td>
+					<td>
+						<input type="password" id="password" size="30" placeholder="Please type in your password"
+							data-th-field="*{password}">
+						<span data-th-if="${#fields.hasErrors('password')}" data-th-errors="*{password}"
+							data-th-errorclass="error"></span>
+					</td>
+				</tr>
+				<tr data-th-if="${captcha != null}">
+					<td colspan="2">
+						What is <span data-th-text="${captcha.toString()}"></span>?
+					</td>
+				</tr>
+				<tr data-th-if="${captcha != null}">
+					<td>
+						<label for="answer">Answer:</label>
+					</td>
+					<td>
+						<input type="text" id="answer" placeholder="Answer" data-th-field="*{captchaAnswer}" />
+						<span data-th-if="${#fields.hasErrors('captchaAnswer')}" data-th-errors="*{captchaAnswer}"
+							data-th-errorclass="error"></span>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button type="submit">Login</button>
+					</td>
+				</tr>
+				<tr data-th-if="${error != null}">
+					<td colspan="2">
+						<span data-th-text="${error}" class="error"><span><br>
+					</td>
+				</tr>
 
-		<div data-th-if="${error != null}">
-			<ul style="list-style-type:none;">
-				<li data-th-text="${error}" class="error">
-				</li>
-			</ul>
-		</div>
+			</table>
 
-	</form>
+
+		</form>
+	</div>
+
+	<div data-th-if="${loggedInUser != null}">
+		<h2>Already logged in as <span data-th-text="${loggedInUser}"></span></h2>
+		<form method="get" data-th-action="@{/logout}">
+			<button type="submit">Logout</button>
+		</form>
+	</div>
+
+
 </body>
 
 </html>

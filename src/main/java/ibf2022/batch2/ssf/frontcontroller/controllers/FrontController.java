@@ -9,7 +9,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import ibf2022.batch2.ssf.frontcontroller.model.Captcha;
 import ibf2022.batch2.ssf.frontcontroller.model.Login;
@@ -33,8 +32,16 @@ public class FrontController {
 	@GetMapping("/")
 	public String goToLandingPage(Model model, HttpSession session) {
 		// check if already logged in (redirects to top secret)
-		if(session.getAttribute(LOGGED_IN_KEY) != null) {
-			return "redirect:/protected/view1.html";
+		String loggedInUser = (String) session.getAttribute(LOGGED_IN_KEY);
+		if(loggedInUser != null) {
+			model.addAttribute("loggedInUser", loggedInUser);
+			return "view0";
+		} 
+
+		// if page is refreshed, captcha should still remain if already generated
+		Captcha captcha = (Captcha) session.getAttribute(CAPTCHA_KEY);
+		if(captcha != null) {
+			model.addAttribute("captcha", captcha);
 		}
 
 		model.addAttribute("login", new Login());
@@ -74,8 +81,10 @@ public class FrontController {
 				if (getAndSetLoginAttempts(session, login.getUsername()) > 3) {
 					authSvc.disableUser(login.getUsername());
 					resetLoginAttempts(session, login.getUsername());
+
 					session.removeAttribute(CAPTCHA_KEY);
-					System.out.println(session.getAttribute(CAPTCHA_KEY) + " >>> captcha in session after removal");
+
+					model.addAttribute("username", login.getUsername());
 					return "view2";
 				}
 	
@@ -102,6 +111,7 @@ public class FrontController {
 				authSvc.disableUser(login.getUsername());
 				resetLoginAttempts(session, login.getUsername());
 				session.removeAttribute("captcha");
+				model.addAttribute("username", login.getUsername());
 				return "view2";
 			}
 
