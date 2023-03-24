@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disabled</title>
+</head>
+
+<body>
+    <p>Your login <span data-th-text="${username}" style="font: Consolas;"></span> has been deactivated for 30 mins</p>
+    <!--todo: align button right-->
+    <form method="get" data-th-action="@{/}">
+        <button type="submit">Back</button>
+    </form>
+</body>
+
+</html>
