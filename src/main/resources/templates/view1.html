@@ -14,7 +14,9 @@
 		</div>
 
 		<div>
-			<button>Logout</button>
+			<form method="get" data-th-action="@{/logout}">
+				<button type="submit">Logout</button>
+			</form> 
 		</div>
 		
 	</body>
